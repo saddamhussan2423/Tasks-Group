@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hijri Calendar</title>
+    <style>
+        body{
+            background-color: #050532;
+            color: white;
+            font-weight: bold;
+        }
+        #calendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            /* gap: 10px; */
+            margin-top: 20px;
+        }
+        .day, .empty {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: center;
+        }
+        button {
+            margin-bottom: 20px;
+        }
+        .header {
+            font-weight: bold;
+            text-align: center;
+        }
+        button{
+        padding: 10px;
+        border-radius: 5px;
+        background-color: #96afee;
+        color: white;
+        font-weight: bold;
+        border: none;
+        }
+    </style>
+</head>
+<body>
+    <button id="nextMonth">Next Month</button> <br>
+    <span id="currYear"></span> 
+    <span id="heading"></span> <br> <br>
+    <span id="currHijriYear"></span> 
+    <div id="calendar"></div>
+
+    <script>
+        const currentDate = new Date();
+
+        function updateAPI() {
+            const month = currentDate.getMonth() + 1;
+            const year = currentDate.getFullYear();
+            const apiURL = `https://api.aladhan.com/v1/gToHCalendar/${month}/${year}`;
+
+            fetch(apiURL)
+                .then(response => response.json())
+                .then(data => {
+                    renderCalendar(data.data);
+                })
+                .catch(error => {
+                    console.error('Error fetching data:', error);
+                });
+        }
+
+        function renderCalendar(apiData) {
+            console.log(apiData);
+            const calendarDiv = document.getElementById('calendar');
+            calendarDiv.innerHTML = ''; /* clear previous data */
+
+            const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+            const firstDayIndex = firstDay.getDay();
+
+            // Update the header information
+            const heading = document.getElementById('heading');
+            const currYear = document.getElementById('currYear');
+            const currHijriYear = document.getElementById('currHijriYear');
+
+            currYear.textContent = `${apiData[0].gregorian.month.en}`;
+            heading.textContent = `${apiData[0].gregorian.year}`;
+            currHijriYear.textContent = `${apiData[0].hijri.month.en} ${apiData[0].hijri.year}`;
+
+            // Weekday names
+            const weekdayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+            // Add weekday names as header
+            weekdayNames.forEach(name => {
+                const headerDiv = document.createElement('div');
+                headerDiv.classList.add('header');
+                headerDiv.textContent = name;
+                calendarDiv.appendChild(headerDiv);
+            });
+
+            // Add empty divs for days before the first day of the month
+            for (let i = 0; i < firstDayIndex; i++) {
+                const emptyDiv = document.createElement('div');
+                emptyDiv.classList.add('empty');
+                calendarDiv.appendChild(emptyDiv);
+            }
+
+            // Render the actual days of the month
+            apiData.forEach(calendarData => {
+                const dayDiv = document.createElement('div');
+                dayDiv.classList.add('day');
+                const currentGregorianDate = currentDate.getDate();
+                // console.log(currentGregorianDate);
+
+                // const weekDay = document.createElement('span');
+                const gregorianDate = document.createElement('span');
+                const hijriDate = document.createElement('span');
+                
+                // weekDay.textContent = `${calendarData.gregorian.weekday.en}`;
+                gregorianDate.innerHTML = `<br>${calendarData.gregorian.day}`;
+                hijriDate.innerHTML = `<br>${calendarData.hijri.day}`;
+                const gregorianCurrentMont = calendarData.gregorian.month.number;
+                // console.log(gregorianCurrentMont);
+                hijriDate.style.color = '#21a68e';
+              
+                // dayDiv.appendChild(weekDay);
+                dayDiv.appendChild(gregorianDate);
+                dayDiv.appendChild(hijriDate);
+                calendarDiv.appendChild(dayDiv);
+            });
+        }
+
+        document.getElementById('nextMonth').addEventListener('click', () => {
+            currentDate.setMonth(currentDate.getMonth() + 1);
+            updateAPI();
+        });
+
+        // Initial API call
+        updateAPI();
+    </script>
+</body>
+</html>
